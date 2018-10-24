@@ -55,6 +55,15 @@ Ip::ProbeTransport()
     debugs(3, 2, "Missing RFC 3493 compliance - attempting split IPv4 and IPv6 stacks ...");
     EnableIpv6 |= IPV6_SPECIAL_SPLITSTACK;
 #endif
+
+    // XXX: Detect if loopback address ::1 is avaiable. This is not ideal, but there should be
+    //      rare cases having an outgoing IPv6 address without loopback ::1.
+    struct sockaddr_in6 ai_addr = { AF_INET6, 0, 0, IN6ADDR_LOOPBACK_INIT };
+    if (bind(s, (struct sockaddr *)&ai_addr, sizeof(ai_addr)) != 0) {
+        debugs(3, 2, "IPv6 loopback address not available on this machine. Auto-Disabled.");
+        EnableIpv6 = IPV6_OFF;
+    }
+
     // TODO: attempt to use the socket to connect somewhere ?
     //  needs to be safe to contact and with guaranteed working IPv6 at the other end.
     close(s);
